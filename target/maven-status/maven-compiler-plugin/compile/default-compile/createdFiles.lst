@@ -1,2 +1,4 @@
+Sensors\ISensor.class
 App.class
 Sensors\AM2301.class
+Sensors\SGP30.class

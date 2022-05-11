@@ -21,10 +21,12 @@
         <artifactId>pi4j-core</artifactId>
         <version>1.3</version>
     </dependency>
+
+    <!-- https://mvnrepository.com/artifact/io.helins/linux-i2c -->
     <dependency>
-        <groupId>com.pi4j</groupId>
-        <artifactId>pi4j-gpio-extension</artifactId>
-        <version>1.3</version>
+        <groupId>io.helins</groupId>
+        <artifactId>linux-i2c</artifactId>
+        <version>1.0.1</version>
     </dependency>
 </dependencies>
 
