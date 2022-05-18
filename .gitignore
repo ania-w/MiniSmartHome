@@ -1,8 +1,8 @@
 # Application properties
-src/resources/application.properties
+src/main/resources/application.properties
 
 # User credentials
-src/resources/*.json
+src/main/resources/*.json
 
 # Folders
 target
