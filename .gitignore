@@ -6,4 +6,5 @@ src/main/resources/*.json
 
 # Folders
 target
+out
 tokens
