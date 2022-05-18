@@ -1,8 +1,0 @@
-# Application properties
-*.properties
-
-# User credentials
-*.json
-
-# Target folder
-target

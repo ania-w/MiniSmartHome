@@ -1,0 +1,9 @@
+# Application properties
+src/resources/application.properties
+
+# User credentials
+src/resources/*.json
+
+# Folders
+target
+tokens
