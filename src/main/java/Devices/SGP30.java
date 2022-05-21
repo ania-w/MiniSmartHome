@@ -41,7 +41,16 @@ public class SGP30 implements ISensor
     private final static int SGP30_CRC8_POLYNOMIAL=0x31;
     private final static int SGP30_CRC8_INIT=0xFF;
 
-    private I2CBus bus;
+    private final I2CBus bus;
+    String data;
+
+    /**
+     * @return  data in string format {temperature=x, co2=x}
+     */
+    public String getData() {
+        return data;
+    }
+
 
     /**
      * @param bus bus number on RaspberryPi
@@ -59,7 +68,7 @@ public class SGP30 implements ISensor
      * @return      Map with two keys: {"co2", "tvoc"}
      */
     @Override
-    public Map<String, Integer> read() throws IOException, InterruptedException {
+    public void read() throws IOException, InterruptedException {
 
         writeReg(START_REG,MEASURE);
         TimeUnit.MILLISECONDS.sleep(60);
@@ -75,10 +84,11 @@ public class SGP30 implements ISensor
         }
 
         // Return map {"co2"=co2, "tvoc"=tvoc}
-        return Stream.of(new Object[][] {
+        data= Stream.of(new Object[][] {
                     { "co2", co2},
                     { "tvoc", tvoc},
-            }).collect(Collectors.toMap(x -> (String) x[0], x -> (Integer) x[1]));
+            }).collect(Collectors.toMap(x -> (String) x[0], x -> (Integer) x[1]))
+                .toString();
 
     }
 

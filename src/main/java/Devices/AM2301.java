@@ -26,7 +26,16 @@ import java.util.stream.Stream;
  * AM2301 = DHT21
  */
 public class AM2301 implements ISensor{
+
     Integer pin;
+    String data;
+
+    /**
+     * @return  data in string format {tvoc=x, co2=x}
+     */
+    public String getData() {
+        return data;
+    }
 
     /**
      * @param board_pin     pin number on the board
@@ -47,7 +56,7 @@ public class AM2301 implements ISensor{
      * @return      Map with two keys: {"temperature", "humidity"}
      */
     @Override
-    public Map<String,Float> read() {
+    public void read() {
 
         // Step 1: MCU sends out starting signal to AM2301
 
@@ -110,11 +119,12 @@ public class AM2301 implements ISensor{
         Gpio.pinMode(pin, Gpio.OUTPUT);
         Gpio.digitalWrite(pin, Gpio.HIGH);
 
-        // Return map {"temperature"=temperature, "humidity"=humidity}
-        return Stream.of(new Object[][] {
+        // Return string {"temperature"=temperature, "humidity"=humidity}
+        data= Stream.of(new Object[][] {
                 { "temperature", temperature},
                 { "humidity", humidity },
-        }).collect(Collectors.toMap(x -> (String) x[0], x -> (Float)x[1]));
+        }).collect(Collectors.toMap(x -> (String) x[0], x -> (Float)x[1]))
+                .toString();
     }
 
 }

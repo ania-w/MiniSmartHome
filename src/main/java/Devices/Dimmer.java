@@ -1,51 +1,49 @@
+/**
+ *   Blebox API
+ *   @see <a href=https://technical.blebox.eu/archives/dimmerBoxAPI/>dimmerBox api</a>
+ *
+ */
+
 package Devices;
 
 import com.google.gson.Gson;
-import com.google.gson.JsonObject;
-import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
-import org.apache.http.NameValuePair;
 import org.apache.http.client.HttpClient;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
-import org.apache.http.conn.params.ConnRoutePNames;
 import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
-import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
 
-import javax.swing.text.html.parser.Entity;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  *  Blebox Dimmerbox
  *  TODO: rest of the endpoints
  */
-public class Dimmer {
+public class Dimmer{
 
     private static final String STATE_ENDPOINT="/api/device/state";
     private static final String UPDATE_ENDPOINT="/api/ota/update";
     private static final String SET_ENDPOINT="/api/dimmer/set";
 
-
-    private HttpClient httpClient=HttpClients.createDefault();
-    private String ip;
+    private final HttpClient httpClient=HttpClients.createDefault();
+    private final String ip;
+    private int desiredBrightness;
 
     public Dimmer(String ip){
         this.ip=ip;
     }
+    public Dimmer(String ip, int desiredBrightness){
+        this.ip=ip;
+        this.desiredBrightness=desiredBrightness;
+    }
 
     /**
-     * Get basic info from dimmer: device name, type etc
-     * @return json string
+     * Read basic info from dimmer: device name, type etc
      * @throws IOException
      */
-    public String getDimmerState() throws IOException {
+    public String readInfo() throws IOException {
         HttpGet request = new HttpGet("http://"+ip+STATE_ENDPOINT);
 
         HttpResponse response = httpClient.execute(request);
@@ -56,7 +54,6 @@ public class Dimmer {
     /**
      *  Set dimmer light intensity
      * @param desiredBrightness 0-100 range
-     * @return json string
      * @throws IOException
      */
     public String setLightIntensity(int desiredBrightness) throws IOException {
@@ -70,7 +67,11 @@ public class Dimmer {
 
         HttpResponse response = httpClient.execute(request);
 
-       return EntityUtils.toString(response.getEntity());
+        return EntityUtils.toString(response.getEntity());
+    }
+
+    public String setLightIntensity() throws IOException {
+        return setLightIntensity(desiredBrightness);
     }
 
     public void updateFirmware() throws IOException {
@@ -79,6 +80,7 @@ public class Dimmer {
         httpClient.execute(request);
     }
 
+    // Can not be static!! For some yet to be discovered reasons, making it static results in hanging the whole thread after 3 executions
     private class setBrightnessRequest{
         requestParams dimmer;
 

@@ -1,30 +1,27 @@
 import Devices.Dimmer;
-import GoogleApi.GoogleApiService;
 import Devices.ISensor;
+import GoogleApi.GoogleApiService;
+import Threads.DimmerThread;
+import Threads.SensorThread;
+import org.apache.commons.lang.math.NumberUtils;
 
 import java.io.IOException;
 
 import java.security.GeneralSecurityException;
 import java.util.List;
+import java.util.stream.Collectors;
 
 
-public class App {
+public class App  {
 
+    public static void main(String... args){
 
-    public static void main(String... args) throws IOException, GeneralSecurityException, InterruptedException {
-        GoogleApiService service=new GoogleApiService();
-        Dimmer dimmer=new Dimmer("192.168.1.32");
-        List<ISensor> sensors=service.getSensorList("A2:E6");
-        System.out.println(dimmer.setLightIntensity(50));
-        while(true)
-        {
-            for (ISensor sensor: sensors) {
-                System.out.println(sensor.read());
-            }
+        Runnable dimmerRunnable=new DimmerThread();
+        Thread dimmerThread=new Thread(dimmerRunnable);
+        dimmerThread.start();
 
-            Thread.sleep(2000);
-        }
-
-
+        Runnable sensorRunnable=new SensorThread();
+        Thread sensorThread=new Thread(sensorRunnable);
+        sensorThread.start();
     }
 }
