@@ -1,44 +1,36 @@
 package Threads;
-
 import Devices.ISensor;
 import GoogleApi.GoogleApiService;
 
+import java.io.IOException;
+import java.security.GeneralSecurityException;
 import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
-public class SensorThread implements Runnable {
-    public void run()
-    {
-        // service for communication with google sheets
-        GoogleApiService service = null;
-        try {
-            service=new GoogleApiService();
+/**
+ *  Thread for updating sensor data in google sheets
+ */
+public class SensorThread {
 
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+    GoogleApiService service = new GoogleApiService();
 
-        while (true)
-        {
-            try {
-                List<ISensor> sensors=service.getDevicesList("Sensors!A2:E");
-                // read sensor data
-                for (ISensor sensor : sensors) {
-                    sensor.read();
-                }
-                // write sensor data to google sheets
-                service.writeSensorData("F2:F" + (sensors.size() + 1), sensors);
-            }
-            catch (Exception e)
-            {
-                e.printStackTrace();
-            }
-            try {
-                Thread.sleep(3500);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
-
-
+    public SensorThread() throws GeneralSecurityException, IOException {
     }
+
+    public void run(){
+        ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
+        executor.scheduleAtFixedRate(() -> {
+            try {
+                List<ISensor> sensors=service.getSensorList();
+                for (var sensor : sensors) sensor.read();
+                service.writeSensorData("F2:F" + (sensors.size() + 1), sensors);
+            } catch (IOException | InterruptedException e) {
+                e.printStackTrace();
+            }
+
+        }, 0, 2000, TimeUnit.MILLISECONDS);
+    }
+
 }

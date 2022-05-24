@@ -31,7 +31,7 @@ public class AM2301 implements ISensor{
     String data;
 
     /**
-     * @return  data in string format {tvoc=x, co2=x}
+     * @return  data in string format {temperature=x, humidity=x}
      */
     public String getData() {
         return data;
@@ -53,13 +53,22 @@ public class AM2301 implements ISensor{
 
     /**
      * Reads data from sensor
-     * @return      Map with two keys: {"temperature", "humidity"}
      */
     @Override
     public void read() {
 
-        // Step 1: MCU sends out starting signal to AM2301
+        startTransmission();
 
+        data=readSensorResponse();
+
+        endTransmission();
+    }
+
+    /**
+     *  MCU sends start transmission request to sensor
+     */
+    private void startTransmission()
+    {
         Gpio.pinMode(pin, Gpio.OUTPUT);
         Gpio.digitalWrite(pin, Gpio.LOW);
         delayMicroseconds(900); // At least 800us
@@ -67,16 +76,20 @@ public class AM2301 implements ISensor{
         Gpio.digitalWrite(pin, Gpio.HIGH);
         delayMicroseconds(30); // 20-40 ms
         Gpio.pinMode(pin, Gpio.INPUT);
+    }
 
-        // Step 2: AM2301 starts data transmission to MCU
-
-        int lastState = Gpio.HIGH;
-        int bits = 0;
-        Integer[] raw_data=new Integer[5];
+    /**
+     * @return String {"temperature", "humidity"}
+     */
+    private String readSensorResponse()
+    {
+        var lastState = Gpio.HIGH;
+        var bits = 0;
+        var raw_data=new Integer[5];
         Arrays.fill(raw_data,0);
         for (int i = 0; i <= 84; i++) {
 
-            int counter = 0;
+            var counter = 0;
 
             while (Gpio.digitalRead(pin) == lastState) {
                 counter++;
@@ -86,45 +99,45 @@ public class AM2301 implements ISensor{
                 }
             }
 
-            // ignore first 3 transitions
-            if (i>=3 && i % 2 == 0 && bits<raw_data.length * 8) {
+            if (i>=3 && i % 2 == 0 && bits<40) {
                 raw_data[bits / 8] <<= 1;
                 if (counter > 16) {
                     raw_data[bits / 8] |= 1;
                 }
-                if(bits>40)
-                    break;
-                else
                     bits++;
             }
+
+            if(bits==40)
+                break;
 
             lastState = Gpio.digitalRead(pin);
 
         }
 
-        // Step 3: Check parity and perform calculations
-
         float temperature=NaN;
         float humidity=NaN;
-        int sum=raw_data[0] + raw_data[1] + raw_data[2] + raw_data[3] & 0x00FF;
-        if (raw_data[4] == sum) {
+        if (checkParity(raw_data)) {
             humidity = (raw_data[0] *256 + raw_data[1]) *0.1f;
             temperature = (raw_data[2]*256 + raw_data[3]) * 0.1f;
             if ((raw_data[2] & 0x80)!=0)  // negative temp
                 temperature*= -1;
         }
 
-        // Step 4: End of the transmission
+        return Stream.of(new Object[][] {
+                        { "temperature", temperature},
+                        { "humidity", humidity },
+                }).collect(Collectors.toMap(x -> (String) x[0], x -> (Float)x[1]))
+                .toString();
+    }
 
+    private boolean checkParity(Integer[] raw_data)
+    {
+        return (((raw_data[0] + raw_data[1] + raw_data[2] + raw_data[3]) & 0x00FF)==raw_data[4]);
+    }
+
+    private void endTransmission(){
         Gpio.pinMode(pin, Gpio.OUTPUT);
         Gpio.digitalWrite(pin, Gpio.HIGH);
-
-        // Return string {"temperature"=temperature, "humidity"=humidity}
-        data= Stream.of(new Object[][] {
-                { "temperature", temperature},
-                { "humidity", humidity },
-        }).collect(Collectors.toMap(x -> (String) x[0], x -> (Float)x[1]))
-                .toString();
     }
 
 }

@@ -5,7 +5,6 @@ import Devices.*;
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.services.sheets.v4.Sheets;
-import com.google.api.services.sheets.v4.model.UpdateValuesResponse;
 import com.google.api.services.sheets.v4.model.ValueRange;
 
 import java.io.IOException;
@@ -18,116 +17,109 @@ import static GoogleApi.GoogleCredentials.JSON_FACTORY;
 public class GoogleApiService {
 
     private static final String APPLICATION_NAME = "MiniSmartHome";
-    private static NetHttpTransport HTTP_TRANSPORT;
 
     private final Sheets service;
     String spreadsheetId;
+    String dimmerSheetName;
+    String sensorSheetName;
 
-    /**
-     * @throws GeneralSecurityException
-     * @throws IOException
-     */
     public GoogleApiService() throws GeneralSecurityException, IOException {
-        HTTP_TRANSPORT = GoogleNetHttpTransport.newTrustedTransport();
+        NetHttpTransport HTTP_TRANSPORT = GoogleNetHttpTransport.newTrustedTransport();
         service = new Sheets.Builder(HTTP_TRANSPORT, JSON_FACTORY, GoogleCredentials.getCredentials(HTTP_TRANSPORT))
                 .setApplicationName(APPLICATION_NAME)
                 .build();
 
-        // Read sheet id from application.properties
-        Properties conf = PropertiesLoader.loadProperties();
+        // Read properties from application.properties
+        var conf = PropertiesLoader.loadProperties();
         spreadsheetId = conf.getProperty("sheet.id");
+        dimmerSheetName = conf.getProperty("sheet.dimmerSheetName");
+        sensorSheetName = conf.getProperty("sheet.sensorSheetName");
     }
 
 
-    /**
-     *
-     * @param range Eg. "Sensors!A1:B2"
-     * @param <T>   Device class implementing IDevice interface
-     * @return      List of devices in the specified sheet
-     * @throws IOException
-     * TODO: cast to T looks ugly :(
-     */
-    public <T> List<T> getDevicesList(String range) throws IOException{
+    public List<ISensor> getSensorList() throws IOException {
 
-        List<List<Object>> values = service.spreadsheets().values()
-                .get(spreadsheetId, range)
-                .execute()
-                .getValues();
+       var values = getSpreadsheetValues(sensorSheetName);
 
-        List<T> devices=new ArrayList<>();
+        List<ISensor> sensors=new ArrayList<>();
 
-        for(List<Object> object : values)
-        {
-            switch (object.get(1).toString())
-            {
-                case "SGP30": {
-                    devices.add((T) new SGP30(Integer.parseInt(object.get(2).toString())));
-                    break;
-                }
-                case "AM2301": {
-                    devices.add((T) new AM2301(Integer.parseInt(object.get(3).toString()),
-                                    Integer.parseInt(object.get(4).toString())));
-                    break;
-                }
-                case "Dimmer":{
-                    devices.add((T) new Dimmer(object.get(2).toString(),
-                            Integer.parseInt(object.get(3).toString())));
-                    break;
-                }
-                default:
-                    throw new IllegalStateException("Unexpected value: " + object.get(1).toString());
-            }
+        for(var object : values) {
+
+            if (object.get(1).toString().equals("SGP30"))
+                sensors.add(new SGP30(objectToInt(object.get(2))));
+
+            else if (object.get(1).toString().equals("AM2301"))
+                sensors.add(new AM2301(objectToInt(object.get(3)), objectToInt(object.get(4))));
+
+            else throw new IllegalStateException("Unexpected value: " + object.get(1).toString());
         }
 
-        return devices;
+        return sensors;
     }
 
-    /**
-     * Read data as list of String values, instead of default google's List<List<Object>>
-     * @param range Eg. "Sensors!A1:B2"
-     * @return  List of String values
-     * @throws IOException
-     */
-    public List<String> readDataAsList(String range) throws IOException {
+    public List<Dimmer> getDimmerList() throws IOException {
 
-        List<List<Object>> values = service.spreadsheets().values()
+        var values = getSpreadsheetValues(dimmerSheetName);
+
+        List<Dimmer> dimmers=new ArrayList<>();
+
+        for(var object : values)
+            dimmers.add(new Dimmer(object.get(2).toString(), objectToInt(object.get(3))));
+
+        return dimmers;
+    }
+
+    private Integer objectToInt(Object obj){
+        return Integer.parseInt(obj.toString());
+    }
+
+    private List<List<Object>> getSpreadsheetValues(String range) throws IOException {
+        return service.spreadsheets().values()
                 .get(spreadsheetId, range)
                 .execute()
                 .getValues();
+    }
 
-        return  values.stream()
-                .flatMap(List::stream)
-                .map(object -> Objects.toString(object, null))
+    /**
+     * @return list of sensor data from getData() method
+     */
+    private List<String> getSensorDataList(List<ISensor> list)  {
+        return list.stream()
+                .map(x-> x.getData())
                 .collect(Collectors.toList());
     }
 
 
     /**
-     *  Write data from getData() to specified range
-     * @param range Eg. "Sensors!A1:B2"
+     *  Write data from getData() to specified range (one column)
+     * @param columnRange
      * @param sensors list of sensors
-     * @return
-     * @throws IOException
      */
-    public Integer writeSensorData(String range, List<ISensor> sensors) throws IOException {
+    public void writeSensorData(String columnRange, List<ISensor> sensors) throws IOException {
 
-        List<String> dataList=sensors.stream()
-                .map(sensor-> sensor.getData())
-                .collect(Collectors.toList());
+        var dataList=getSensorDataList(sensors);
+
+        var body=createColumnValueRangeFromList(dataList);
+
+        updateSheet(columnRange,body);
+
+    }
+
+    private void updateSheet(String range, ValueRange body) throws IOException {
+        service.spreadsheets().values().update(spreadsheetId, range, body)
+                .setValueInputOption("RAW")
+                .execute();
+    }
+
+    /**
+     * Converts list to spreadsheet column, eg every list element is next row in a column
+     */
+    private ValueRange createColumnValueRangeFromList(List<String> list){
         List<List<Object>> values = new ArrayList<>(new ArrayList<>());
+        for(var element : list)
+            values.add(List.of(element));
 
-        for(String data : dataList)
-        {
-               values.add(Arrays.asList(data));
-        }
-
-        ValueRange body = new ValueRange()
-                .setValues(values);
-        UpdateValuesResponse result =
-                service.spreadsheets().values().update(spreadsheetId, range, body)
-                        .setValueInputOption("RAW")
-                        .execute();
-        return result.getUpdatedCells();
+        return new ValueRange().setValues(values);
     }
 
 }

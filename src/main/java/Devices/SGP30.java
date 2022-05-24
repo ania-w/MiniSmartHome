@@ -9,7 +9,6 @@ import io.helins.linux.i2c.I2CBuffer;
 import io.helins.linux.i2c.I2CBus;
 
 import java.io.IOException;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -70,12 +69,16 @@ public class SGP30 implements ISensor
     @Override
     public void read() throws IOException, InterruptedException {
 
-        writeReg(START_REG,MEASURE);
-        TimeUnit.MILLISECONDS.sleep(60);
-        I2CBuffer buffer=readReg(6);
+        sendMeasureRequest();
 
-        int co2=buffer.get(0)<<8 | buffer.get(1);
-        int tvoc=buffer.get(3)<<8 | buffer.get(4);
+        data = readData();
+
+    }
+
+    private String readData() throws IOException {
+        I2CBuffer buffer=readReg(6);
+        var co2=buffer.get(0)<<8 | buffer.get(1);
+        var tvoc=buffer.get(3)<<8 | buffer.get(4);
 
         if(CRC(co2)!=buffer.get(2) || CRC(tvoc)!=buffer.get(5))
         {
@@ -83,20 +86,23 @@ public class SGP30 implements ISensor
             tvoc=-1;
         }
 
-        // Return map {"co2"=co2, "tvoc"=tvoc}
-        data= Stream.of(new Object[][] {
-                    { "co2", co2},
-                    { "tvoc", tvoc},
-            }).collect(Collectors.toMap(x -> (String) x[0], x -> (Integer) x[1]))
+        return Stream.of(new Object[][] {
+                        { "co2", co2},
+                        { "tvoc", tvoc},
+                }).collect(Collectors.toMap(x -> (String) x[0], x -> (Integer) x[1]))
                 .toString();
+    }
 
+    private void sendMeasureRequest() throws IOException, InterruptedException {
+        writeReg(START_REG,MEASURE);
+        TimeUnit.MILLISECONDS.sleep(60);
     }
 
     public void powerUp() throws IOException {
         writeReg(START_REG,INIT);
     }
 
-    public void writeReg(int register, int command) throws IOException {
+    private void writeReg(int register, int command) throws IOException {
 
         bus.selectSlave(ADDRESS);
 
@@ -108,7 +114,7 @@ public class SGP30 implements ISensor
         bus.write(buffer);
     }
 
-    public I2CBuffer readReg(int length) throws IOException {
+    private I2CBuffer readReg(int length) throws IOException {
         I2CBuffer buffer = new I2CBuffer(length);
         bus.read(buffer) ;
 
@@ -116,9 +122,9 @@ public class SGP30 implements ISensor
     }
 
 
-    public static int CRC(int data) {
-        int crc = 0xFF;
-        for (int _byte : new int[]{(data & 0xff00) >> 8, data & 0x00ff}) {
+    private static int CRC(int data) {
+        var crc = 0xFF;
+        for (var _byte : new int[]{(data & 0xff00) >> 8, data & 0x00ff}) {
             crc ^= _byte;
             for (int i = 0; i < 8; i++) {
                 int test = crc & 0x80;

@@ -7,7 +7,6 @@
 package Devices;
 
 import com.google.gson.Gson;
-import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
@@ -21,7 +20,7 @@ import java.io.IOException;
  *  Blebox Dimmerbox
  *  TODO: rest of the endpoints
  */
-public class Dimmer{
+public class Dimmer {
 
     private static final String STATE_ENDPOINT="/api/device/state";
     private static final String UPDATE_ENDPOINT="/api/ota/update";
@@ -41,12 +40,11 @@ public class Dimmer{
 
     /**
      * Read basic info from dimmer: device name, type etc
-     * @throws IOException
      */
     public String readInfo() throws IOException {
-        HttpGet request = new HttpGet("http://"+ip+STATE_ENDPOINT);
+        var request = new HttpGet("http://"+ip+STATE_ENDPOINT);
 
-        HttpResponse response = httpClient.execute(request);
+        var response = httpClient.execute(request);
 
         return EntityUtils.toString(response.getEntity());
     }
@@ -54,33 +52,36 @@ public class Dimmer{
     /**
      *  Set dimmer light intensity
      * @param desiredBrightness 0-100 range
-     * @throws IOException
      */
-    public String setLightIntensity(int desiredBrightness) throws IOException {
-        HttpPost request = new HttpPost("http://"+ip+SET_ENDPOINT);
+    public void setLightIntensity(int desiredBrightness) throws IOException {
+        var request = new HttpPost("http://"+ip+SET_ENDPOINT);
 
         // Convert request body to json
-        Gson gson=new Gson();
-        setBrightnessRequest brightnessRequest=new setBrightnessRequest(7,(int)(desiredBrightness*2.55),false,false);
-        StringEntity entity=new StringEntity(gson.toJson(brightnessRequest));
+        var gson=new Gson();
+        var brightnessRequest=new setBrightnessRequest(7,(int)(desiredBrightness*2.55),false,false);
+        var entity=new StringEntity(gson.toJson(brightnessRequest));
         request.setEntity(entity);
 
-        HttpResponse response = httpClient.execute(request);
+        var response = httpClient.execute(request);
 
-        return EntityUtils.toString(response.getEntity());
+        EntityUtils.toString(response.getEntity());
     }
 
-    public String setLightIntensity() throws IOException {
-        return setLightIntensity(desiredBrightness);
+    /**
+     * Set light intensity with the data from constructor
+     */
+    public void setLightIntensity() throws IOException {
+        setLightIntensity(desiredBrightness);
     }
 
     public void updateFirmware() throws IOException {
-        HttpPost request = new HttpPost("http://"+ip+UPDATE_ENDPOINT);
+        var request = new HttpPost("http://"+ip+UPDATE_ENDPOINT);
 
         httpClient.execute(request);
     }
 
-    // Can not be static!! For some yet to be discovered reasons, making it static results in hanging the whole thread after 3 executions
+    // Can not be static!!
+    // Making it static results in hanging the whole thread after 3 executions
     private class setBrightnessRequest{
         requestParams dimmer;
 

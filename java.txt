@@ -1,0 +1,49 @@
+immutable
+
+list.of, collections.unmodifiable, adnotacja immutablevalue
+
+kolekcje w javie -> set
+
+Map   
+klucz-wartość
+Collection-> 
+List-> linkedlist i arraylist |
+ Set-> unikalne elementy
+trzeba zaimplementować hashCode/equals
+
+ | Queue
+
+wsadza z tyłu, usuwa z przodu
+
+tworzenie funkcji w interfejsach
+
+domyślne można
+
+czysty kod: brak komentarzy
+nazwy zmiennych
+małe funkcje
+
+
+kiedt var? lokalnie
+
+exceptions: checked: runtime, można owinąć trycatchem, podczas kompilacji
+unchecked: runtime
+
+finalize->lifecycle
+
+polimorfizm: możemy używać metod o tej samej nazwie ale np innych parametrach
+metody wirtualne: 
+jeśli impl ten sam interfejs/klase abstr to mozemy wywolywac metody 
+
+HashMap
+ - dostęp jest poprzez iterator, nie ma synchronizacji, klucz jeden może być nullem 
+
+HashTable 
+- dostęp jest poprzez enumerator, z synchronizacją, nie może zawierać nulla
+
+
+typy numeryczne: byte, short, int, long, float, double
+
+Sterta jest, to pamięć rezerwowana przez JVM w celu tworzenia nowych obiektów. Jest ona oczyszczana przez Garbage Collector.
+
+Stos jest to, pamięc wykorzystywana do przechowywania danych prymitywnych, oraz zmiennych.
