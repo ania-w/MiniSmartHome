@@ -31,7 +31,7 @@ public class DimmerThread {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-        }, 0, 550, TimeUnit.MILLISECONDS);
+        }, 0, 580, TimeUnit.MILLISECONDS);
     }
 
 }

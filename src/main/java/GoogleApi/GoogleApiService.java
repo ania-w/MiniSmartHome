@@ -2,6 +2,7 @@ package GoogleApi;
 
 import Configuration.PropertiesLoader;
 import Devices.*;
+import com.google.api.client.auth.oauth2.Credential;
 import com.google.api.client.googleapis.javanet.GoogleNetHttpTransport;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.services.sheets.v4.Sheets;
@@ -17,15 +18,18 @@ import static GoogleApi.GoogleCredentials.JSON_FACTORY;
 public class GoogleApiService {
 
     private static final String APPLICATION_NAME = "MiniSmartHome";
-
+    Credential credential;
+    NetHttpTransport HTTP_TRANSPORT;
     private final Sheets service;
     String spreadsheetId;
     String dimmerSheetName;
     String sensorSheetName;
 
     public GoogleApiService() throws GeneralSecurityException, IOException {
-        NetHttpTransport HTTP_TRANSPORT = GoogleNetHttpTransport.newTrustedTransport();
-        service = new Sheets.Builder(HTTP_TRANSPORT, JSON_FACTORY, GoogleCredentials.getCredentials(HTTP_TRANSPORT))
+
+        HTTP_TRANSPORT = GoogleNetHttpTransport.newTrustedTransport();
+        credential=GoogleCredentials.getCredentials(HTTP_TRANSPORT);
+        service = new Sheets.Builder(HTTP_TRANSPORT, JSON_FACTORY, credential )
                 .setApplicationName(APPLICATION_NAME)
                 .build();
 
@@ -36,37 +40,63 @@ public class GoogleApiService {
         sensorSheetName = conf.getProperty("sheet.sensorSheetName");
     }
 
+    public boolean checkIfTokenExpired()
+    {
+       return credential.getExpirationTimeMilliseconds()>10000;
+    }
 
-    public List<ISensor> getSensorList() throws IOException {
+    public void refreshToken() throws IOException {
+        credential.refreshToken();
+        credential.getAccessToken();
+    }
 
-       var values = getSpreadsheetValues(sensorSheetName);
 
-        List<ISensor> sensors=new ArrayList<>();
+    public List<ISensor> getSensorList(boolean powerUpSGP30) throws IOException {
 
-        for(var object : values) {
+        if(checkIfTokenExpired()) {
+            var values = getSpreadsheetValues(sensorSheetName);
 
-            if (object.get(1).toString().equals("SGP30"))
-                sensors.add(new SGP30(objectToInt(object.get(2))));
+            List<ISensor> sensors = new ArrayList<>();
 
-            else if (object.get(1).toString().equals("AM2301"))
-                sensors.add(new AM2301(objectToInt(object.get(3)), objectToInt(object.get(4))));
+            for (var object : values) {
 
-            else throw new IllegalStateException("Unexpected value: " + object.get(1).toString());
+                if (object.get(1).toString().equals("SGP30"))
+                    sensors.add(new SGP30(objectToInt(object.get(2)), powerUpSGP30));
+
+                else if (object.get(1).toString().equals("AM2301"))
+                    sensors.add(new AM2301(objectToInt(object.get(3)), objectToInt(object.get(4))));
+
+                else throw new IllegalStateException("Unexpected value: " + object.get(1).toString());
+            }
+            return sensors;
         }
-
-        return sensors;
+        else
+        {
+            refreshToken();
+        }
+        return null;
     }
 
     public List<Dimmer> getDimmerList() throws IOException {
 
-        var values = getSpreadsheetValues(dimmerSheetName);
+        if(checkIfTokenExpired()) {
+            var values = getSpreadsheetValues(dimmerSheetName);
 
-        List<Dimmer> dimmers=new ArrayList<>();
+            List<Dimmer> dimmers = new ArrayList<>();
 
-        for(var object : values)
-            dimmers.add(new Dimmer(object.get(2).toString(), objectToInt(object.get(3))));
+            for (var object : values)
+            {
+                int desiredBrightness=objectToInt(object.get(3));
+                if(desiredBrightness>=0)
+                    dimmers.add(new Dimmer(object.get(2).toString(), desiredBrightness));
+            }
 
-        return dimmers;
+            return dimmers;
+        }
+        else {
+            refreshToken();
+        }
+        return null;
     }
 
     private Integer objectToInt(Object obj){
@@ -97,11 +127,16 @@ public class GoogleApiService {
      */
     public void writeSensorData(String columnRange, List<ISensor> sensors) throws IOException {
 
-        var dataList=getSensorDataList(sensors);
+        if(checkIfTokenExpired()) {
+            var dataList = getSensorDataList(sensors);
 
-        var body=createColumnValueRangeFromList(dataList);
+            var body = createColumnValueRangeFromList(dataList);
 
-        updateSheet(columnRange,body);
+            updateSheet(columnRange, body);
+        }
+        else {
+            refreshToken();
+        }
 
     }
 

@@ -55,10 +55,10 @@ public class SGP30 implements ISensor
      * @param bus bus number on RaspberryPi
      * @throws IOException
      */
-    public SGP30(int bus) throws IOException {
+    public SGP30(int bus,boolean powerUp) throws IOException {
         this.bus=new I2CBus(bus);
         this.bus.selectSlave(ADDRESS);
-        powerUp();
+        if(powerUp) powerUp();
     }
 
 
@@ -86,11 +86,8 @@ public class SGP30 implements ISensor
             tvoc=-1;
         }
 
-        return Stream.of(new Object[][] {
-                        { "co2", co2},
-                        { "tvoc", tvoc},
-                }).collect(Collectors.toMap(x -> (String) x[0], x -> (Integer) x[1]))
-                .toString();
+        return "{\"co2\":"+co2+","
+                +"\"tvoc\":"+tvoc+"}";
     }
 
     private void sendMeasureRequest() throws IOException, InterruptedException {

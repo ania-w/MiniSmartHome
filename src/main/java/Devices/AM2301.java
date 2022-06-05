@@ -11,12 +11,15 @@
 package Devices;
 
 
+import com.google.api.client.json.gson.GsonFactory;
+import com.google.gson.Gson;
 import com.pi4j.wiringpi.Gpio;
 import com.pi4j.wiringpi.GpioUtil;
 
 import static com.pi4j.wiringpi.Gpio.delayMicroseconds;
 import static java.lang.Float.NaN;
 
+import java.math.BigDecimal;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -34,7 +37,7 @@ public class AM2301 implements ISensor{
      * @return  data in string format {temperature=x, humidity=x}
      */
     public String getData() {
-        return data;
+          return data;
     }
 
     /**
@@ -78,9 +81,6 @@ public class AM2301 implements ISensor{
         Gpio.pinMode(pin, Gpio.INPUT);
     }
 
-    /**
-     * @return String {"temperature", "humidity"}
-     */
     private String readSensorResponse()
     {
         var lastState = Gpio.HIGH;
@@ -114,8 +114,8 @@ public class AM2301 implements ISensor{
 
         }
 
-        float temperature=NaN;
-        float humidity=NaN;
+        float temperature=101;
+        float humidity=101;
         if (checkParity(raw_data)) {
             humidity = (raw_data[0] *256 + raw_data[1]) *0.1f;
             temperature = (raw_data[2]*256 + raw_data[3]) * 0.1f;
@@ -123,11 +123,8 @@ public class AM2301 implements ISensor{
                 temperature*= -1;
         }
 
-        return Stream.of(new Object[][] {
-                        { "temperature", temperature},
-                        { "humidity", humidity },
-                }).collect(Collectors.toMap(x -> (String) x[0], x -> (Float)x[1]))
-                .toString();
+        return "{\"temperature\":"+temperature+","
+                +"\"humidity\":"+humidity+"}";
     }
 
     private boolean checkParity(Integer[] raw_data)

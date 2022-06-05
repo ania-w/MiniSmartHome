@@ -9,7 +9,7 @@ public class App  {
     public static void main(String... args) throws GeneralSecurityException, IOException {
 
         var dimmerThread=new DimmerThread();
-        dimmerThread.run();
+       dimmerThread.run();
 
         var sensorThread=new SensorThread();
         sensorThread.run();

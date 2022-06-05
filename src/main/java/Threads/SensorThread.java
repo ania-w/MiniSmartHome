@@ -15,6 +15,7 @@ import java.util.concurrent.TimeUnit;
 public class SensorThread {
 
     GoogleApiService service = new GoogleApiService();
+    List<ISensor> sensors=service.getSensorList(true);
 
     public SensorThread() throws GeneralSecurityException, IOException {
     }
@@ -23,14 +24,14 @@ public class SensorThread {
         ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
         executor.scheduleAtFixedRate(() -> {
             try {
-                List<ISensor> sensors=service.getSensorList();
+                sensors=service.getSensorList(false);
                 for (var sensor : sensors) sensor.read();
                 service.writeSensorData("F2:F" + (sensors.size() + 1), sensors);
             } catch (IOException | InterruptedException e) {
-                e.printStackTrace();
+                System.out.println(e);
             }
 
-        }, 0, 2000, TimeUnit.MILLISECONDS);
+        }, 0, 3000, TimeUnit.MILLISECONDS);
     }
 
 }
