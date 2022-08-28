@@ -26,8 +26,7 @@ public class GoogleCredentials {
     private static final String TOKENS_DIRECTORY_PATH = "tokens";
 
     private static final List<String> SCOPES = Collections.singletonList(SheetsScopes.SPREADSHEETS);
-    private static final String CREDENTIALS_FILE_PATH = "/credentials-rpi.json";
-    private static GoogleAuthorizationCodeFlow flow;
+    private static final String CREDENTIALS_FILE_PATH = "/credentials.json";
 
 
     /**
@@ -45,7 +44,7 @@ public class GoogleCredentials {
         var clientSecrets = GoogleClientSecrets.load(JSON_FACTORY, new InputStreamReader(in));
 
         // Build flow and trigger user authorization request.
-        flow = new GoogleAuthorizationCodeFlow.Builder(
+        var flow = new GoogleAuthorizationCodeFlow.Builder(
                 HTTP_TRANSPORT, JSON_FACTORY, clientSecrets, SCOPES)
                 .setDataStoreFactory(new FileDataStoreFactory(new java.io.File(TOKENS_DIRECTORY_PATH)))
                 .setAccessType("offline")

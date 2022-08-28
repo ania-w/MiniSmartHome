@@ -26,9 +26,8 @@ public class SensorThread {
             try {
                 sensors=service.getSensorList(false);
                 for (var sensor : sensors) sensor.read();
-                service.writeSensorData("F2:F" + (sensors.size() + 1), sensors);
-            } catch (IOException | InterruptedException e) {
-                System.out.println(e);
+                service.writeSensorDataToSheet("F2:F" + (sensors.size() + 1), sensors);
+            } catch (IOException | InterruptedException ignored) {
             }
 
         }, 0, 3000, TimeUnit.MILLISECONDS);

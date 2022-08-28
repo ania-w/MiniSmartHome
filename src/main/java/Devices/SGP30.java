@@ -10,8 +10,6 @@ import io.helins.linux.i2c.I2CBus;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  *  SGP30 Co2 & Tvoc sensor
@@ -19,10 +17,6 @@ import java.util.stream.Stream;
  *  Measurment range:
  *  Tvoc: 0   - 60 000 ppm
  *  Co2:  400 - 60 000 ppb
- *
- *  TODO: set/calculate humidity
- *  TODO: reset
- *  TODO: setIAQBaseline
  */
 public class SGP30 implements ISensor
 {
@@ -32,6 +26,7 @@ public class SGP30 implements ISensor
     private final static int MEASURE=0x08;
     private final static int GET_BASELINE=0x15;
     private final static int SET_BASELINE=0x1e;
+    //TODO set humidity
     private final static int SET_HUMIDITY=0x61;
 
     private final static int GET_FEATURE_SET_VERSION=0x2f;
@@ -43,18 +38,11 @@ public class SGP30 implements ISensor
     private final I2CBus bus;
     String data;
 
-    /**
-     * @return  data in string format {temperature=x, co2=x}
-     */
     public String getData() {
         return data;
     }
 
 
-    /**
-     * @param bus bus number on RaspberryPi
-     * @throws IOException
-     */
     public SGP30(int bus,boolean powerUp) throws IOException {
         this.bus=new I2CBus(bus);
         this.bus.selectSlave(ADDRESS);
@@ -62,31 +50,26 @@ public class SGP30 implements ISensor
     }
 
 
-    /**
-     * Reads data from sensor
-     * @return      Map with two keys: {"co2", "tvoc"}
-     */
     @Override
     public void read() throws IOException, InterruptedException {
 
         sendMeasureRequest();
 
-        data = readData();
-
+        readOutput();
     }
 
-    private String readData() throws IOException {
-        I2CBuffer buffer=readReg(6);
+    private void readOutput() throws IOException {
+        I2CBuffer buffer=readReg();
         var co2=buffer.get(0)<<8 | buffer.get(1);
         var tvoc=buffer.get(3)<<8 | buffer.get(4);
 
         if(CRC(co2)!=buffer.get(2) || CRC(tvoc)!=buffer.get(5))
         {
-            co2=-1;
-            tvoc=-1;
+            co2=ERROR_CODE;
+            tvoc=ERROR_CODE;
         }
 
-        return "{\"co2\":"+co2+","
+        data = "{\"co2\":"+co2+","
                 +"\"tvoc\":"+tvoc+"}";
     }
 
@@ -111,8 +94,8 @@ public class SGP30 implements ISensor
         bus.write(buffer);
     }
 
-    private I2CBuffer readReg(int length) throws IOException {
-        I2CBuffer buffer = new I2CBuffer(length);
+    private I2CBuffer readReg() throws IOException {
+        I2CBuffer buffer = new I2CBuffer(6);
         bus.read(buffer) ;
 
         return buffer;

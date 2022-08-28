@@ -11,9 +11,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 
-/**
- *  Thread for updating dimmer light intensity basing on google sheets data
- */
 public class DimmerThread {
 
     GoogleApiService service = new GoogleApiService();
@@ -28,10 +25,8 @@ public class DimmerThread {
                 List<Dimmer> dimmers = service.getDimmerList();
                 for (Dimmer dimmer : dimmers) dimmer.setLightIntensity();
 
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }, 0, 580, TimeUnit.MILLISECONDS);
+            } catch (IOException ignored) {  }
+        }, 0, 1000, TimeUnit.MILLISECONDS);
     }
 
 }

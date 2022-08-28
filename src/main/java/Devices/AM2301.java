@@ -9,20 +9,12 @@
  */
 
 package Devices;
-
-
-import com.google.api.client.json.gson.GsonFactory;
-import com.google.gson.Gson;
 import com.pi4j.wiringpi.Gpio;
 import com.pi4j.wiringpi.GpioUtil;
 
 import static com.pi4j.wiringpi.Gpio.delayMicroseconds;
-import static java.lang.Float.NaN;
-
-import java.math.BigDecimal;
 import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+
 
 /**
  * Temperature [C] & Humidity sensor [%]
@@ -33,16 +25,13 @@ public class AM2301 implements ISensor{
     Integer pin;
     String data;
 
-    /**
-     * @return  data in string format {temperature=x, humidity=x}
-     */
     public String getData() {
           return data;
     }
 
     /**
      * @param board_pin     pin number on the board
-     * @param pi4j_pin      pi4j GPIO number, check their webpage
+     * @param pi4j_pin      pi4j GPIO number
      */
     public AM2301(Integer board_pin,Integer pi4j_pin)  {
 
@@ -54,22 +43,17 @@ public class AM2301 implements ISensor{
         GpioUtil.export(board_pin, GpioUtil.DIRECTION_OUT);
     }
 
-    /**
-     * Reads data from sensor
-     */
     @Override
     public void read() {
 
         startTransmission();
 
-        data=readSensorResponse();
+        readSensorResponse();
 
         endTransmission();
     }
 
-    /**
-     *  MCU sends start transmission request to sensor
-     */
+
     private void startTransmission()
     {
         Gpio.pinMode(pin, Gpio.OUTPUT);
@@ -81,7 +65,7 @@ public class AM2301 implements ISensor{
         Gpio.pinMode(pin, Gpio.INPUT);
     }
 
-    private String readSensorResponse()
+    private void readSensorResponse()
     {
         var lastState = Gpio.HIGH;
         var bits = 0;
@@ -111,17 +95,24 @@ public class AM2301 implements ISensor{
                 break;
 
             lastState = Gpio.digitalRead(pin);
-
         }
 
-        float temperature=101;
-        float humidity=101;
+        data=getFormettedData(raw_data);
+    }
+
+    private String getFormettedData(Integer[] raw_data){
+        float temperature;
+        float humidity;
         if (checkParity(raw_data)) {
             humidity = (raw_data[0] *256 + raw_data[1]) *0.1f;
             temperature = (raw_data[2]*256 + raw_data[3]) * 0.1f;
             if ((raw_data[2] & 0x80)!=0)  // negative temp
                 temperature*= -1;
+        } else {
+            temperature=ERROR_CODE;
+            humidity=ERROR_CODE;
         }
+
 
         return "{\"temperature\":"+temperature+","
                 +"\"humidity\":"+humidity+"}";

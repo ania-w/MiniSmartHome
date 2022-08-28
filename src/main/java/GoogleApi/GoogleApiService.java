@@ -33,27 +33,15 @@ public class GoogleApiService {
                 .setApplicationName(APPLICATION_NAME)
                 .build();
 
-        // Read properties from application.properties
         var conf = PropertiesLoader.loadProperties();
         spreadsheetId = conf.getProperty("sheet.id");
         dimmerSheetName = conf.getProperty("sheet.dimmerSheetName");
         sensorSheetName = conf.getProperty("sheet.sensorSheetName");
     }
 
-    public boolean checkIfTokenExpired()
-    {
-       return credential.getExpirationTimeMilliseconds()>10000;
-    }
-
-    public void refreshToken() throws IOException {
-        credential.refreshToken();
-        credential.getAccessToken();
-    }
-
 
     public List<ISensor> getSensorList(boolean powerUpSGP30) throws IOException {
 
-        if(checkIfTokenExpired()) {
             var values = getSpreadsheetValues(sensorSheetName);
 
             List<ISensor> sensors = new ArrayList<>();
@@ -69,17 +57,11 @@ public class GoogleApiService {
                 else throw new IllegalStateException("Unexpected value: " + object.get(1).toString());
             }
             return sensors;
-        }
-        else
-        {
-            refreshToken();
-        }
-        return null;
+
     }
 
     public List<Dimmer> getDimmerList() throws IOException {
 
-        if(checkIfTokenExpired()) {
             var values = getSpreadsheetValues(dimmerSheetName);
 
             List<Dimmer> dimmers = new ArrayList<>();
@@ -92,11 +74,6 @@ public class GoogleApiService {
             }
 
             return dimmers;
-        }
-        else {
-            refreshToken();
-        }
-        return null;
     }
 
     private Integer objectToInt(Object obj){
@@ -110,33 +87,22 @@ public class GoogleApiService {
                 .getValues();
     }
 
-    /**
-     * @return list of sensor data from getData() method
-     */
+
     private List<String> getSensorDataList(List<ISensor> list)  {
         return list.stream()
-                .map(x-> x.getData())
+                .map(ISensor::getData)
                 .collect(Collectors.toList());
     }
 
 
-    /**
-     *  Write data from getData() to specified range (one column)
-     * @param columnRange
-     * @param sensors list of sensors
-     */
-    public void writeSensorData(String columnRange, List<ISensor> sensors) throws IOException {
 
-        if(checkIfTokenExpired()) {
+    public void writeSensorDataToSheet(String columnRange, List<ISensor> sensors) throws IOException {
+
             var dataList = getSensorDataList(sensors);
 
             var body = createColumnValueRangeFromList(dataList);
 
             updateSheet(columnRange, body);
-        }
-        else {
-            refreshToken();
-        }
 
     }
 
@@ -146,9 +112,7 @@ public class GoogleApiService {
                 .execute();
     }
 
-    /**
-     * Converts list to spreadsheet column, eg every list element is next row in a column
-     */
+
     private ValueRange createColumnValueRangeFromList(List<String> list){
         List<List<Object>> values = new ArrayList<>(new ArrayList<>());
         for(var element : list)

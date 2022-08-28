@@ -18,7 +18,6 @@ import java.io.IOException;
 
 /**
  *  Blebox Dimmerbox
- *  TODO: rest of the endpoints
  */
 public class Dimmer {
 
@@ -30,33 +29,18 @@ public class Dimmer {
     private final String ip;
     private int desiredBrightness;
 
-    public Dimmer(String ip){
-        this.ip=ip;
-    }
+
     public Dimmer(String ip, int desiredBrightness){
         this.ip=ip;
         this.desiredBrightness=desiredBrightness;
     }
 
     /**
-     * Read basic info from dimmer: device name, type etc
-     */
-    public String readInfo() throws IOException {
-        var request = new HttpGet("http://"+ip+STATE_ENDPOINT);
-
-        var response = httpClient.execute(request);
-
-        return EntityUtils.toString(response.getEntity());
-    }
-
-    /**
-     *  Set dimmer light intensity
      * @param desiredBrightness 0-100 range
      */
     public void setLightIntensity(int desiredBrightness) throws IOException {
         var request = new HttpPost("http://"+ip+SET_ENDPOINT);
 
-        // Convert request body to json
         var gson=new Gson();
         var brightnessRequest=new setBrightnessRequest(7,(int)(desiredBrightness*2.55),false,false);
         var entity=new StringEntity(gson.toJson(brightnessRequest));
@@ -67,17 +51,8 @@ public class Dimmer {
         EntityUtils.toString(response.getEntity());
     }
 
-    /**
-     * Set light intensity with the data from constructor
-     */
     public void setLightIntensity() throws IOException {
         setLightIntensity(desiredBrightness);
-    }
-
-    public void updateFirmware() throws IOException {
-        var request = new HttpPost("http://"+ip+UPDATE_ENDPOINT);
-
-        httpClient.execute(request);
     }
 
     // Can not be static!!
