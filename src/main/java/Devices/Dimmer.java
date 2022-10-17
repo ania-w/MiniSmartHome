@@ -1,12 +1,16 @@
 /**
- *   Blebox API
- *   @see <a href=https://technical.blebox.eu/archives/dimmerBoxAPI/>dimmerBox api</a>
+ * Blebox API
  *
+ * @see <a href=https://technical.blebox.eu/archives/dimmerBoxAPI/>dimmerBox api</a>
  */
 
 package Devices;
 
+import Exceptions.InvalidDimmerRequestException;
 import com.google.gson.Gson;
+import lombok.NoArgsConstructor;
+import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
@@ -15,56 +19,87 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.util.Objects;
 
 /**
  *  Blebox Dimmerbox
  */
-public class Dimmer {
+public class Dimmer extends Device {
 
-    private static final String STATE_ENDPOINT="/api/device/state";
-    private static final String UPDATE_ENDPOINT="/api/ota/update";
-    private static final String SET_ENDPOINT="/api/dimmer/set";
+    private static final String UPDATE_ENDPOINT = "/api/ota/update";
+    private static final String SET_ENDPOINT = "/api/dimmer/set";
 
-    private final HttpClient httpClient=HttpClients.createDefault();
-    private final String ip;
-    private int desiredBrightness;
+    private final HttpClient httpClient = HttpClients.createDefault();
+    private String ip;
+    private Integer lightIntensity;
 
-
-    public Dimmer(String ip, int desiredBrightness){
-        this.ip=ip;
-        this.desiredBrightness=desiredBrightness;
+    public Dimmer() {
+        super("Dimmer");
     }
 
-    /**
-     * @param desiredBrightness 0-100 range
-     */
-    public void setLightIntensity(int desiredBrightness) throws IOException {
-        var request = new HttpPost("http://"+ip+SET_ENDPOINT);
+    public String getIp() {
+        return ip;
+    }
 
-        var gson=new Gson();
-        var brightnessRequest=new setBrightnessRequest(7,(int)(desiredBrightness*2.55),false,false);
-        var entity=new StringEntity(gson.toJson(brightnessRequest));
-        request.setEntity(entity);
+    public void setIp(String ip) {
+        this.ip = ip;
+    }
+
+    public Integer getLightIntensity() {
+        return lightIntensity;
+    }
+
+    public void setLightIntensity(Integer lightIntensity) {
+        this.lightIntensity = lightIntensity;
+    }
+
+
+    public void setLightIntensity() {
+        var request = new HttpPost("http://" + ip + SET_ENDPOINT);
+
+        var gson = new Gson();
+        var brightnessRequest = new BrightnessRequest(7, (int) (lightIntensity * 2.55), false, false);
+
+        try {
+            request.setEntity(new StringEntity(gson.toJson(brightnessRequest)));
+        } catch (UnsupportedEncodingException e) {
+            throw new InvalidDimmerRequestException("Cannot process request: " + brightnessRequest);
+        }
+
+        try {
+
+            HttpResponse response = httpClient.execute(request);
+
+            EntityUtils.consume(response.getEntity());
+
+            if (response.getStatusLine().getStatusCode() != HttpStatus.SC_OK)
+                throw new InvalidDimmerRequestException(response.getEntity().getContent().toString());
+
+        } catch (IOException e) {
+            throw new InvalidDimmerRequestException("Cannot execute request.");
+        }
+    }
+
+
+    //TODO
+    public boolean updateFirmware() throws IOException {
+        var request = new HttpGet("http://" + ip + UPDATE_ENDPOINT);
 
         var response = httpClient.execute(request);
 
-        EntityUtils.toString(response.getEntity());
+        return response.getStatusLine().getStatusCode() == HttpStatus.SC_OK;
     }
 
-    public void setLightIntensity() throws IOException {
-        setLightIntensity(desiredBrightness);
-    }
 
-    // Can not be static!!
-    // Making it static results in hanging the whole thread after 3 executions
-    private class setBrightnessRequest{
+    private class BrightnessRequest {
         requestParams dimmer;
 
-        public setBrightnessRequest(int loadType, int desiredBrightness, boolean overloaded, boolean overheated) {
-            this.dimmer = new requestParams(loadType,desiredBrightness,overloaded,overheated);
+        public BrightnessRequest(int loadType, int desiredBrightness, boolean overloaded, boolean overheated) {
+            this.dimmer = new requestParams(loadType, desiredBrightness, overloaded, overheated);
         }
 
-        class requestParams{
+        class requestParams {
             int loadType;
             int desiredBrightness;
             boolean overloaded;

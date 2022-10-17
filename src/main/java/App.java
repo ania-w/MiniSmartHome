@@ -1,17 +1,14 @@
-import Threads.DimmerThread;
-import Threads.SensorThread;
-import java.io.IOException;
-import java.security.GeneralSecurityException;
+
+import Exceptions.InvalidCollectionNameException;
+import Threads.MainThread;
 
 
 public class App  {
 
-    public static void main(String... args) throws GeneralSecurityException, IOException {
+    public static void main(String... args) throws InvalidCollectionNameException {
 
-        var dimmerThread=new DimmerThread();
-        dimmerThread.run();
+        var thread=new MainThread();
+        thread.run();
 
-        var sensorThread=new SensorThread();
-        sensorThread.run();
     }
 }
