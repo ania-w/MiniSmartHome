@@ -32,7 +32,6 @@ public class Dimmer extends Device {
 
     private final HttpClient httpClient = HttpClients.createDefault();
     private String ip;
-    private Integer lightIntensity;
 
     public Dimmer() {
         super("Dimmer");
@@ -46,20 +45,13 @@ public class Dimmer extends Device {
         this.ip = ip;
     }
 
-    public Integer getLightIntensity() {
-        return lightIntensity;
-    }
-
-    public void setLightIntensity(Integer lightIntensity) {
-        this.lightIntensity = lightIntensity;
-    }
 
 
     public void setLightIntensity() {
         var request = new HttpPost("http://" + ip + SET_ENDPOINT);
 
         var gson = new Gson();
-        var brightnessRequest = new BrightnessRequest(7, (int) (lightIntensity * 2.55), false, false);
+        var brightnessRequest = new BrightnessRequest(7, (int) (data.get("lightIntensity") * 2.55), false, false);
 
         try {
             request.setEntity(new StringEntity(gson.toJson(brightnessRequest)));
@@ -69,12 +61,14 @@ public class Dimmer extends Device {
 
         try {
 
-            HttpResponse response = httpClient.execute(request);
+             HttpResponse response = httpClient.execute(request);
 
-            EntityUtils.consume(response.getEntity());
+             EntityUtils.consume(response.getEntity());
 
-            if (response.getStatusLine().getStatusCode() != HttpStatus.SC_OK)
-                throw new InvalidDimmerRequestException(response.getEntity().getContent().toString());
+             request.releaseConnection();
+
+             if (response.getStatusLine().getStatusCode() != HttpStatus.SC_OK)
+                 throw new InvalidDimmerRequestException(response.getEntity().getContent().toString());
 
         } catch (IOException e) {
             throw new InvalidDimmerRequestException("Cannot execute request.");

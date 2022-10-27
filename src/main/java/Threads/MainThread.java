@@ -29,7 +29,7 @@ public class MainThread {
         System.out.println("Application started on "+ LocalDate.now());
     }
 
-    void readSensorDataLoop() {
+  void readSensorDataLoop() {
 
         executor.scheduleAtFixedRate(() -> {
             for (var sensor : sensorService.getAll()) {
@@ -45,9 +45,9 @@ public class MainThread {
     void setLightIntensityLoop() {
 
         executor.scheduleAtFixedRate(() -> {
-            for (var dimmer : dimmerService.getAll()) {
-                dimmer.setLightIntensity();
-            }
+                for (var dimmer : dimmerService.getAll()) {
+                    dimmer.setLightIntensity();
+                }
         }, 0, 1, TimeUnit.SECONDS);
 
     }

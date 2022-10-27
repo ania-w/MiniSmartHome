@@ -5,14 +5,15 @@ import Configuration.Config;
 import Devices.*;
 import Exceptions.DeviceSetupFailedException;
 import Exceptions.InvalidCollectionNameException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.cloud.firestore.*;
 import com.google.firebase.cloud.FirestoreClient;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.lang.reflect.Type;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
+
 
 
 public class FirestoreRepository<T extends Device> {
@@ -52,7 +53,7 @@ public class FirestoreRepository<T extends Device> {
         return devices;
     }
 
-    private List<T> requestDevicesFromFirebase(){
+    private List<T> requestDevicesFromFirebase() {
         try {
             return collection.get().get().getDocuments().stream().map(this::getDeviceForDocument).collect(Collectors.toList());
         } catch (InterruptedException | ExecutionException e) {
@@ -73,7 +74,41 @@ public class FirestoreRepository<T extends Device> {
                 return;
             }
 
-                devices = requestDevicesFromFirebase();
+                for (var dc : snapshots.getDocumentChanges()) {
+                    var document = dc.getDocument();
+                    var id = dc.getDocument().getId();
+                    switch (dc.getType()) {
+                        case MODIFIED:
+                            // TODO optymalizacja
+                            T device = devices.stream().filter(x -> x.getId().equals(id)).findFirst().get();
+                            var objectMapper = new ObjectMapper();
+                            var updatedDeviceMap = objectMapper.convertValue(document.getData(), Map.class);
+                            var map = objectMapper.convertValue(device, Map.class);
+
+                            map.remove("data");
+                            updatedDeviceMap.remove("data");
+
+                            if (!updatedDeviceMap.equals(map))
+                                devices.stream().filter(x -> x.getId().equals(id)).forEach(x -> x = getDeviceForDocument(document));
+                            else if (device instanceof Dimmer) {
+                                Map<String,Long> data= (Map<String, Long>) document.getData().get("data");
+                                Double lightIntensity= Double.valueOf(data.get("lightIntensity"));
+                                devices.stream().filter(x -> x.getId().equals(id)).findFirst().get().getData().put("lightIntensity", lightIntensity);
+                            }
+                            break;
+
+                        case ADDED:
+                            if(devices.stream().noneMatch(x -> x.getId().equals(id)))
+                                devices.add(getDeviceForDocument(document));
+                            break;
+
+                        case REMOVED:
+                            var toBeRemoved = devices.stream().filter(x -> x.getId().equals(id)).findFirst().get();
+                            devices.remove(toBeRemoved);
+                    }
+
+                }
+
         });
     }
 
@@ -93,7 +128,7 @@ public class FirestoreRepository<T extends Device> {
             case "AM2301":
                 device = (T) document.toObject(AM2301.class);
                 break;
-            default:
+             default:
                 throw new DeviceSetupFailedException(name);
         }
 

@@ -49,12 +49,12 @@ public class SGP30 extends Sensor {
 
     private Integer busNumber;
 
-    public Integer getBusNumber() {
-        return busNumber;
+    public Long getBusNumber() {
+        return Long.valueOf(busNumber);
     }
 
-    public void setBusNumber(Integer busNumber) {
-        this.busNumber = busNumber;
+    public void setBusNumber(Long busNumber) {
+        this.busNumber = Math.toIntExact(busNumber);
         init();
     }
 

@@ -32,21 +32,21 @@ public class AM2301 extends Sensor {
     private Integer pin;
     private Integer boardpin;
 
-    public Integer getPin() {
-        return pin;
+    public Long getPin() {
+        return Long.valueOf(pin);
     }
 
-    public void setPin(Integer pin) {
-        this.pin = pin;
+    public void setPin(Long pin) {
+        this.pin = Math.toIntExact(pin);
     }
 
-    public Integer getBoardpin() {
-        return boardpin;
+    public Long getBoardpin() {
+        return Long.valueOf(boardpin);
     }
 
-    public void setBoardpin(Integer boardpin) {
-        this.boardpin = boardpin;
-        GpioUtil.export(boardpin, GpioUtil.DIRECTION_OUT);
+    public void setBoardpin(Long boardpin) {
+        this.boardpin = Math.toIntExact(boardpin);
+        GpioUtil.export(Math.toIntExact(boardpin), GpioUtil.DIRECTION_OUT);
     }
 
     public AM2301() {
@@ -106,9 +106,6 @@ public class AM2301 extends Sensor {
             lastState = Gpio.digitalRead(pin);
         }
 
-
-        Gpio.pinMode(pin, Gpio.OUTPUT);
-        Gpio.digitalWrite(pin, Gpio.HIGH);
 
         return getFormattedData(raw_data);
     }
