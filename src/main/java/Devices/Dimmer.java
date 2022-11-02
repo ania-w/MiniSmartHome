@@ -8,7 +8,6 @@ package Devices;
 
 import Exceptions.InvalidDimmerRequestException;
 import com.google.gson.Gson;
-import lombok.NoArgsConstructor;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
@@ -20,7 +19,6 @@ import org.apache.http.util.EntityUtils;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.util.Objects;
 
 /**
  *  Blebox Dimmerbox

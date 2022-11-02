@@ -4,12 +4,13 @@ import lombok.NoArgsConstructor;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 
 @NoArgsConstructor
 public abstract class Device {
     String id;
     private String name;
+
+    private String room;
 
     public Device(String name) {
         this.name = name;
@@ -35,7 +36,8 @@ public abstract class Device {
     public Map<String, Double> getData() {
         return data;
     }
-    public void setData(Map<String,Double> data){this.data=data;}
 
+    public String getRoom() { return room; }
 
+    public void setRoom(String room) { this.room = room; }
 }

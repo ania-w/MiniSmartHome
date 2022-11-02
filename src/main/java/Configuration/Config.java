@@ -1,8 +1,6 @@
 package Configuration;
 
 
-import java.util.Properties;
-
 public class Config {
 
     public static final String SENSORS_COLLECTION_PATH = PropertiesLoader.getProperty("sensor-collection-name");

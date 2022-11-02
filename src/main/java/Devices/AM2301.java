@@ -15,8 +15,6 @@ import Exceptions.DeviceSetupFailedException;
 import com.pi4j.wiringpi.Gpio;
 import com.pi4j.wiringpi.GpioUtil;
 
-import javax.annotation.PostConstruct;
-
 import static com.pi4j.wiringpi.Gpio.delayMicroseconds;
 
 import java.util.*;

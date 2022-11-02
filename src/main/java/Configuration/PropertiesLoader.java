@@ -9,7 +9,9 @@ public final class PropertiesLoader {
 
     private static final Properties configuration=new Properties();
 
-    private PropertiesLoader() {
+    private PropertiesLoader(){}
+
+    static {
         try {
             InputStream inputStream = PropertiesLoader.class
                     .getClassLoader()

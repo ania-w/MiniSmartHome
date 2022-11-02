@@ -35,7 +35,7 @@ public class MainThread {
             for (var sensor : sensorService.getAll()) {
                 var data = sensor.getData();
                 sensor.read();
-                if (sensor.getData().equals(data))
+                if (sensor.getData().equals(data)) //observer?
                     sensorService.update(sensor);
             }
         }, 0, 5, TimeUnit.SECONDS);

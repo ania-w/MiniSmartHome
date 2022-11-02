@@ -9,7 +9,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.cloud.firestore.*;
 import com.google.firebase.cloud.FirestoreClient;
 
-import java.lang.reflect.Type;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;

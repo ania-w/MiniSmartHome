@@ -8,17 +8,13 @@ package Devices;
 
 import Exceptions.DeviceSetupFailedException;
 import Exceptions.FailedReadingDataException;
-import com.google.firebase.database.Exclude;
 import io.helins.linux.i2c.I2CBuffer;
 import io.helins.linux.i2c.I2CBus;
-import lombok.NoArgsConstructor;
 
-
-import javax.annotation.PostConstruct;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
+
 import java.util.concurrent.TimeUnit;
 
 /**
