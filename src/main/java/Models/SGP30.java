@@ -4,7 +4,7 @@
  * @see <a href=https://github.com/helins/linux-i2c.java>helins/linux-i2c</a>
  */
 
-package Devices;
+package Models;
 
 import Exceptions.DeviceSetupFailedException;
 import Exceptions.FailedReadingDataException;
@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -54,10 +55,7 @@ public class SGP30 extends Sensor {
         init();
     }
 
-    public SGP30() {
-        super("SGP30");
-    }
-
+    public SGP30() {    }
 
     private void init() {
         try {
@@ -70,27 +68,24 @@ public class SGP30 extends Sensor {
     }
 
     @Override
-    public void read() {
-
+    public Optional<Map<String,Double>> read() {
         sendMeasurementRequest();
-
-        data = readOutput();
-
+        return getOutput();
     }
 
-    private Map<String, Double> readOutput() {
+    private Optional<Map<String, Double>> getOutput() {
         I2CBuffer buffer = readReg();
         var co2 = buffer.get(0) << 8 | buffer.get(1);
         var tvoc = buffer.get(3) << 8 | buffer.get(4);
 
         if (CRC(co2) != buffer.get(2) || CRC(tvoc) != buffer.get(5))
-            throw new FailedReadingDataException("Invalid CRC.");
+            return Optional.empty();
 
         Map<String, Double> respose = new HashMap<>();
         respose.put("co2", (double) co2);
         respose.put("tvoc", (double) tvoc);
 
-        return respose;
+        return Optional.of(respose);
     }
 
     private void sendMeasurementRequest() {

@@ -4,10 +4,11 @@
  * @see <a href=https://technical.blebox.eu/archives/dimmerBoxAPI/>dimmerBox api</a>
  */
 
-package Devices;
+package Models;
 
 import Exceptions.InvalidDimmerRequestException;
 import com.google.gson.Gson;
+import lombok.NoArgsConstructor;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.HttpClient;
@@ -19,20 +20,27 @@ import org.apache.http.util.EntityUtils;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.util.Map;
 
 /**
  *  Blebox Dimmerbox
  */
-public class Dimmer extends Device {
+@NoArgsConstructor
+public class Dimmer extends Device{
 
     private static final String UPDATE_ENDPOINT = "/api/ota/update";
     private static final String SET_ENDPOINT = "/api/dimmer/set";
 
     private final HttpClient httpClient = HttpClients.createDefault();
     private String ip;
+    private String description;
 
-    public Dimmer() {
-        super("Dimmer");
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     public String getIp() {
@@ -43,23 +51,16 @@ public class Dimmer extends Device {
         this.ip = ip;
     }
 
-
-
-    public void setLightIntensity() {
+    public void setLightIntensity(Integer lightIntensity) {
         var request = new HttpPost("http://" + ip + SET_ENDPOINT);
 
         var gson = new Gson();
-        var brightnessRequest = new BrightnessRequest(7, (int) (data.get("lightIntensity") * 2.55), false, false);
+        var brightnessRequest = new BrightnessRequest(7, (int) (lightIntensity * 2.55), false, false);
 
         try {
             request.setEntity(new StringEntity(gson.toJson(brightnessRequest)));
-        } catch (UnsupportedEncodingException e) {
-            throw new InvalidDimmerRequestException("Cannot process request: " + brightnessRequest);
-        }
 
-        try {
-
-             HttpResponse response = httpClient.execute(request);
+            HttpResponse response = httpClient.execute(request);
 
              EntityUtils.consume(response.getEntity());
 

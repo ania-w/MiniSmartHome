@@ -5,7 +5,7 @@ import Threads.MainThread;
 
 public class App  {
 
-    public static void main(String... args) throws InvalidCollectionNameException {
+    public static void main(String... args) {
 
         // TODO: schedule updates
         // TODO: testy

@@ -1,10 +1,7 @@
 package Services;
 
-import Configuration.COLLECTIONS;
 import Configuration.Config;
-import Devices.Device;
-import Devices.Sensor;
-import Exceptions.InvalidCollectionNameException;
+import Models.Sensor;
 import Repositories.FirestoreRepository;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.firebase.FirebaseApp;
@@ -14,14 +11,14 @@ import lombok.extern.slf4j.Slf4j;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
+import java.util.Map;
 
 @Slf4j
-public class FirestoreService<T extends Device> {
+public class FirestoreService {
 
-    FirestoreRepository<T> repository;
+    FirestoreRepository repository;
 
-    public FirestoreService(COLLECTIONS collection) throws InvalidCollectionNameException {
+    public FirestoreService() {
 
         try {
 
@@ -36,9 +33,9 @@ public class FirestoreService<T extends Device> {
             if (FirebaseApp.getApps().isEmpty())
                 FirebaseApp.initializeApp(options);
 
-            repository = new FirestoreRepository<>(collection);
+            repository = new FirestoreRepository();
 
-        } catch (ExecutionException | InterruptedException | IOException e) {
+        } catch (IOException e) {
             e.printStackTrace();
             System.exit(2);
             System.err.println("Failed to initialise repository");
@@ -46,12 +43,12 @@ public class FirestoreService<T extends Device> {
 
     }
 
-    public List<T> getAll() {
-        return repository.getDevices();
+    public void updateSensorData(String id, Map<String, Double> data) {
+        repository.updateSensorData(id,data);
     }
 
-    public void update(Sensor sensor) {
-        repository.updateData(sensor);
+    public List<Sensor> getSensors() {
+        return repository.getSensors();
     }
 
 }

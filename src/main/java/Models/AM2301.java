@@ -9,7 +9,7 @@
  * Should be suitable for DHT22, DHT11
  */
 
-package Devices;
+package Models;
 
 import Exceptions.DeviceSetupFailedException;
 import com.pi4j.wiringpi.Gpio;
@@ -47,19 +47,15 @@ public class AM2301 extends Sensor {
         GpioUtil.export(Math.toIntExact(boardpin), GpioUtil.DIRECTION_OUT);
     }
 
-    public AM2301() {
-        super("AM2301");
+    public AM2301(){
         if (Gpio.wiringPiSetup() == -1)
             throw new DeviceSetupFailedException(this.getClass().getSimpleName());
     }
 
-
     @Override
-    public void read() {
-
+    public Optional<Map<String,Double>> read() {
         sendMeasurementRequest();
-        getSensorResponse().ifPresent(r -> data = r);
-
+        return getSensorResponse();
     }
 
 
