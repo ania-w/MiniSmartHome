@@ -183,7 +183,9 @@ public class FirestoreRepository {
         try {
 
             WriteBatch batch= database.batch();
-            sensorList.forEach(s -> sensorData.stream().filter(sd->s.getData_destination_id().equals(sd.getId())).findFirst().get().setData(s.getData()));
+            sensorList.forEach(s -> sensorData.stream().filter(sd->s.getData_destination_id().equals(sd.getId())).findFirst().get().getData().putAll(s.getData()));
+            sensorData.forEach(sd-> System.out.println(sd.getData()));
+
             sensorData.forEach(sd -> batch.set(roomSensorDataCollection.document(sd.getId()),sd));
             batch.commit().get();
 
