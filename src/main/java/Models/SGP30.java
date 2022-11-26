@@ -68,9 +68,9 @@ public class SGP30 extends Sensor {
     }
 
     @Override
-    public Optional<Map<String,Double>> read() {
+    public void read() {
         sendMeasurementRequest();
-        return getOutput();
+        getOutput().ifPresent(map -> data = map);
     }
 
     private Optional<Map<String, Double>> getOutput() {

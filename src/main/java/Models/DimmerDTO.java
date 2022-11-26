@@ -6,6 +6,7 @@ import java.util.Map;
 
 @NoArgsConstructor
 public class DimmerDTO {
+    private String id;
     private Map<String,Integer> light_intensity_map;
     private String room_id;
 
@@ -23,5 +24,13 @@ public class DimmerDTO {
 
     public void setRoom_id(String room_id) {
         this.room_id = room_id;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
     }
 }

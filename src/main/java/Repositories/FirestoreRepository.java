@@ -22,9 +22,11 @@ public class FirestoreRepository {
     List<Room> rooms = new ArrayList<>();
     List<Sensor> sensors = new ArrayList<>();
     List<Dimmer> dimmers = new ArrayList<>();
+    List<SensorData> sensorData=new ArrayList<>();
+    Firestore database = FirestoreClient.getFirestore();
+
 
     public FirestoreRepository() {
-        Firestore database = FirestoreClient.getFirestore();
 
         this.roomsCollection = database.collection(Config.ROOMS_COLLECTION_PATH);
         this.roomDimmerDataCollection = database.collection(Config.DIMMER_DATA_COLLECTION_PATH);
@@ -35,6 +37,17 @@ public class FirestoreRepository {
         createRoomsLists();
         createDimmerCollection();
         createSensorCollection();
+        createSensorDataList();
+
+    }
+
+    private void createSensorDataList() {
+        try {
+            sensorData = roomSensorDataCollection.get().get().toObjects(SensorData.class);
+        } catch (InterruptedException | ExecutionException e) {
+            System.err.println("DimmerData collection initialization failed.");
+            e.printStackTrace();
+        }
     }
 
     private void createSensorCollection() {
@@ -53,7 +66,7 @@ public class FirestoreRepository {
             if (isErr(snapshots, e)) return;
 
             for (var dc : snapshots.getDocumentChanges()) {
-                var updatedObj = dc.getDocument().toObject(Sensor.class);
+                var updatedObj = getSensorForDocument(dc.getDocument());
                 var id = dc.getDocument().getId();
                 switch (dc.getType()) {
                     case MODIFIED:
@@ -166,12 +179,14 @@ public class FirestoreRepository {
     }
 
 
-    public void updateSensorData(String id, Map<String, Double> data) {
+    public void updateSensorData(List<Sensor> sensorList) {
         try {
-            var update = (Map<String, Double>) Objects.requireNonNull(roomSensorDataCollection.document(id).get().get().getData()).get("data");
-            update.putAll(data);
-            var task = roomSensorDataCollection.document(id).update("data", update);
-            task.get();
+
+            WriteBatch batch= database.batch();
+            sensorList.forEach(s -> sensorData.stream().filter(sd->s.getData_destination_id().equals(sd.getId())).findFirst().get().setData(s.getData()));
+            sensorData.forEach(sd -> batch.set(roomSensorDataCollection.document(sd.getId()),sd));
+            batch.commit().get();
+
         } catch (InterruptedException | ExecutionException e) {
             e.printStackTrace();
         }

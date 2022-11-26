@@ -1,8 +1,11 @@
 package Threads;
 
+import Models.Sensor;
 import Services.FirestoreService;
 
 import java.time.LocalDate;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Executors;
@@ -20,17 +23,21 @@ public class MainThread {
 
     public void run() {
         System.out.println("Starting application..");
-        readSensorDataLoop(); //17,2k writes per day
+        readSensorDataLoop();
         System.out.println("Application started on " + LocalDate.now());
     }
 
   void readSensorDataLoop() {
 
         executor.scheduleAtFixedRate(() -> {
-            Optional<Map<String,Double>> data;
-            for (var sensor : service.getSensors()) {
-                data = sensor.read();
-                data.ifPresent(map -> service.updateSensorData(sensor.getData_destination_id(), map));
+            try {
+                List<Sensor> sensorList = service.getSensors();
+                for (var sensor : sensorList) {
+                    sensor.read();
+                }
+                service.updateSensorData(sensorList);
+            } catch (Exception e){
+                e.printStackTrace();
             }
         }, 0, 5, TimeUnit.SECONDS);
 

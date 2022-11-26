@@ -1,5 +1,4 @@
 
-import Exceptions.InvalidCollectionNameException;
 import Threads.MainThread;
 
 
@@ -9,6 +8,8 @@ public class App  {
 
         // TODO: schedule updates
         // TODO: testy
+        // TODO: logowanie bledow
+        // TODO: testy wszystkich operacji cruda
         var thread=new MainThread();
         thread.run();
 

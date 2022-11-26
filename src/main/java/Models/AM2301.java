@@ -53,9 +53,9 @@ public class AM2301 extends Sensor {
     }
 
     @Override
-    public Optional<Map<String,Double>> read() {
+    public void read() {
         sendMeasurementRequest();
-        return getSensorResponse();
+        getSensorResponse().ifPresent(this::setData);
     }
 
 
@@ -100,7 +100,6 @@ public class AM2301 extends Sensor {
             lastState = Gpio.digitalRead(pin);
         }
 
-
         return getFormattedData(raw_data);
     }
 
@@ -117,7 +116,16 @@ public class AM2301 extends Sensor {
         } else
             return Optional.empty();
 
+        if(!isDataValid(formattedData))
+            return Optional.empty();
+
         return Optional.of(formattedData);
+    }
+
+    private boolean isDataValid(Map<String, Double> formattedData) {
+        var b= formattedData.get("temperature") >0.0 && formattedData.get("temperature") <= 60.0
+                && formattedData.get("humidity") >= 0.0 && formattedData.get("humidity") <= 100.0;
+        return b;
     }
 
     private boolean checkParity(Integer[] raw_data) {
